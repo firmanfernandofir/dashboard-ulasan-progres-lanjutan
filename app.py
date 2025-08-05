@@ -1,6 +1,9 @@
 from flask import Flask, render_template_string, request
 import pandas as pd
 import plotly.express as px
+import os
+
+print("Cek apakah data.csv ada:", os.path.exists("data.csv"))
 
 # Inisialisasi aplikasi Flask
 app = Flask(__name__)
