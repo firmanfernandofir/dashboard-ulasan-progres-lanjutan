@@ -1,4 +1,3 @@
-
 from flask import Flask, render_template_string
 import pandas as pd
 import plotly.express as px
@@ -32,6 +31,9 @@ def index():
     try:
         # Load data
         df = pd.read_csv("data.csv")
+
+        if 'date' not in df.columns or 'snippet' not in df.columns or 'link' not in df.columns:
+            return "<h3>Kolom 'date', 'snippet', atau 'link' tidak ditemukan dalam data.csv</h3>"
 
         # Konversi tanggal
         df['Tanggal'] = df['date'].apply(relative_date_to_absolute)
@@ -77,5 +79,4 @@ def index():
         return f"<h3>Terjadi error: {e}</h3>"
 
 if __name__ == '__main__':
-    pass
-
+    app.run(debug=True, host='0.0.0.0', port=5000)
