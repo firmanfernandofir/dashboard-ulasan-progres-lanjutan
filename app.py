@@ -77,4 +77,5 @@ def index():
         return f"<h3>Terjadi error: {e}</h3>"
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    pass
+
