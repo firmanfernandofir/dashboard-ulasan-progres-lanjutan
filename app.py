@@ -1,31 +1,31 @@
-from flask import Flask, request, render_template_string
+from flask import Flask, request, jsonify, render_template
 import pandas as pd
 import os
 
-# Cek apakah file tersedia
-print("Cek apakah data.csv ada:", os.path.exists("data.csv"))
-
 app = Flask(__name__)
 
-# Load dataset
-df = pd.read_csv("data.csv")
+# Cek apakah data.csv tersedia
+DATA_FILE = 'data.csv'
+if os.path.exists(DATA_FILE):
+    df = pd.read_csv(DATA_FILE)
+    print("Cek apakah data.csv ada: True")
+else:
+    print("Cek apakah data.csv ada: False")
+    df = pd.DataFrame()
 
-# Home page
-@app.route("/")
-def index():
-    return render_template_string("""
-        <h2>Data Preview</h2>
-        <table border="1">
-        {{ table|safe }}
-        </table>
-    """, table=df.head().to_html())
+@app.route('/')
+def home():
+    return "<h1>Aplikasi Flask Berjalan di Railway!</h1><p>Gunakan endpoint /data untuk melihat isi CSV</p>"
 
-# Predict example
-@app.route("/predict", methods=["POST"])
-def predict():
-    data = request.json
-    # Misal: prediksi dummy
-    return {"prediction": "Contoh prediksi"}
+@app.route('/data', methods=['GET'])
+def show_data():
+    if df.empty:
+        return jsonify({"error": "data.csv tidak ditemukan atau kosong"}), 404
+    return df.to_json(orient='records')
 
-# WSGI app (tidak pakai app.run())
-# Gunicorn akan menjalankan: app
+# Tambahkan endpoint lain sesuai kebutuhan
+# Misalnya untuk prediksi, upload file, dsb.
+
+# Ini penting agar Flask bisa jalan saat di Railway
+if __name__ == '__main__':
+    app.run(debug=False, host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
