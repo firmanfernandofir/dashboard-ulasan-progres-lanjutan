@@ -52,20 +52,26 @@ monthly_count = monthly_count.sort_values("bulan_tahun")
 st.subheader("📈 Jumlah Ulasan per Bulan")
 fig, ax = plt.subplots(figsize=(10, 4))
 ax.plot(monthly_count["bulan_tahun"].astype(str), monthly_count["jumlah_ulasan"], marker="o", linestyle='-')
-plt.xticks(rotation=45)
-plt.xlabel("Bulan-Tahun")
-plt.ylabel("Jumlah Ulasan")
-plt.grid(True)
+ax.set_xlabel("Bulan-Tahun")
+ax.set_ylabel("Jumlah Ulasan")
+ax.tick_params(axis='x', rotation=45)
+ax.grid(True)
 st.pyplot(fig)
 
-# === Filter Berdasarkan Rating (Opsional) ===
-with st.expander("🔎 Filter Berdasarkan Rating"):
-    selected_ratings = st.multiselect("Pilih Rating", sorted(df["rating"].dropna().unique()), default=sorted(df["rating"].dropna().unique()))
+# === Filter Rating ===
+with st.expander("🔎 Filter Rating"):
+    available_ratings = sorted(df["rating"].dropna().unique())
+    selected_ratings = st.multiselect("Pilih rating:", available_ratings, default=available_ratings)
     df = df[df["rating"].isin(selected_ratings)]
 
-# === Tampilkan Tabel Ulasan Lengkap ===
+# === Slider Batas Jumlah Ulasan Ditampilkan ===
 st.subheader("🗣️ Daftar Ulasan Lengkap")
-for _, row in df.sort_values("parsed_date", ascending=False).iterrows():
+max_show = st.slider("🔢 Tampilkan maksimal ulasan:", min_value=5, max_value=100, value=20, step=5)
+
+df_sorted = df.sort_values("parsed_date", ascending=False).head(max_show)
+
+# === Tampilkan Ulasan Interaktif ===
+for _, row in df_sorted.iterrows():
     st.markdown(f"""
     <div style='border:1px solid #ccc;padding:10px;border-radius:10px;margin-bottom:10px'>
     <strong>👤 {row['name']}</strong><br>
