@@ -1,31 +1,54 @@
-from flask import Flask, request, jsonify, render_template
+import streamlit as st
 import pandas as pd
-import os
+import matplotlib.pyplot as plt
+from datetime import datetime
+import re
 
-app = Flask(__name__)
+st.set_page_config(layout="wide", page_title="Ulasan Google PDAM")
 
-# Cek apakah data.csv tersedia
-DATA_FILE = 'data.csv'
-if os.path.exists(DATA_FILE):
-    df = pd.read_csv(DATA_FILE)
-    print("Cek apakah data.csv ada: True")
-else:
-    print("Cek apakah data.csv ada: False")
-    df = pd.DataFrame()
+# === Load data ===
+df = pd.read_csv("data.csv")
 
-@app.route('/')
-def home():
-    return "<h1>Aplikasi Flask Berjalan di Railway!</h1><p>Gunakan endpoint /data untuk melihat isi CSV</p>"
+# === Parse tanggal ===
+def parse_relative_date(date_str):
+    if "minggu" in date_str:
+        weeks = int(re.findall(r"\d+", date_str)[0])
+        return pd.Timestamp.now() - pd.Timedelta(weeks=weeks)
+    elif "bulan" in date_str:
+        months = int(re.findall(r"\d+", date_str)[0])
+        return pd.Timestamp.now() - pd.DateOffset(months=months)
+    elif "tahun" in date_str:
+        years = int(re.findall(r"\d+", date_str)[0])
+        return pd.Timestamp.now() - pd.DateOffset(years=years)
+    else:
+        return pd.NaT
 
-@app.route('/data', methods=['GET'])
-def show_data():
-    if df.empty:
-        return jsonify({"error": "data.csv tidak ditemukan atau kosong"}), 404
-    return df.to_json(orient='records')
+df["parsed_date"] = df["date"].apply(parse_relative_date)
+df["bulan_tahun"] = df["parsed_date"].dt.to_period("M")
 
-# Tambahkan endpoint lain sesuai kebutuhan
-# Misalnya untuk prediksi, upload file, dsb.
+# === Grafik ===
+st.title("📊 Visualisasi Ulasan Google Maps PDAM")
+st.markdown("Grafik ini menunjukkan jumlah ulasan setiap bulannya.")
 
-# Ini penting agar Flask bisa jalan saat di Railway
-if __name__ == '__main__':
-    app.run(debug=False, host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
+monthly_count = df.groupby("bulan_tahun").size().reset_index(name="jumlah_ulasan")
+monthly_count = monthly_count.sort_values("bulan_tahun")
+
+fig, ax = plt.subplots()
+ax.plot(monthly_count["bulan_tahun"].astype(str), monthly_count["jumlah_ulasan"], marker="o")
+plt.xticks(rotation=45)
+plt.xlabel("Bulan-Tahun")
+plt.ylabel("Jumlah Ulasan")
+plt.grid(True)
+st.pyplot(fig)
+
+# === Tabel Ulasan ===
+st.subheader("🗣️ Daftar Ulasan Lengkap")
+for _, row in df.sort_values("parsed_date", ascending=False).iterrows():
+    st.markdown(f"""
+    **👤 {row['name']}**  
+    ⭐ Rating: {row['rating']}  
+    📅 Tanggal: {row['date']}  
+    🔗 [Lihat Profil Reviewer]({row['link']})  
+    📝 *{row['snippet']}*
+    ---
+    """)
