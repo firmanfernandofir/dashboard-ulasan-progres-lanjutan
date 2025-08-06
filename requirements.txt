@@ -1,4 +1,3 @@
-flask
+streamlit
 pandas
-plotly
-gunicorn
+matplotlib
